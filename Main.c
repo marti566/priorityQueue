@@ -80,12 +80,6 @@ int main(int argc, char** argv)
         printf("\n");
         *position = 0;
 
-for(int i = 0; i < 1000000; i++)
-{
-    insertProc(15,q1Root, pcbTable);
-    removeHighestProc(q1Root);
-}
-
         insertProc(3,q1Root, pcbTable);
         insertProc(7,q1Root, pcbTable);
         insertProc(2,q1Root, pcbTable);
@@ -192,9 +186,9 @@ for(int i = 0; i < 1000000; i++)
             }
         }
         //time goes here
-        for(int m = 0; m < 100000000; m++)
+        for(int m = 0; m < 100; m++)
         {
-
+            printf("%i iteration:\n ", m);
             procRandInt = rand();
             startDirection = procRandInt % 2;
             if(startDirection)

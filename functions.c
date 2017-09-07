@@ -3,23 +3,24 @@
 #include "functions.h"
 #include <stdio.h>
 
-
-_Bool insertProc(short proc, struct PCB ** root, struct PCB PCB_Table[])
+_Bool
+insertProc(short proc, struct PCB **root, struct PCB PCB_Table[])
 {
-    if(*root != 0)
+    printf("adding %i proc, with priority %i\n", proc, PCB_Table[proc].priority);
+    if (*root != 0)
     {
-        struct PCB * traverse = *root;
-        //traverse the binary tree to place the process
-        while(traverse->right != 0)
+        struct PCB *traverse = *root;
+        // traverse the binary tree to place the process
+        while (traverse->right != 0)
         {
-            
-            if(traverse->priority <= PCB_Table[proc].priority)
+
+            if (traverse->priority <= PCB_Table[proc].priority)
             {
-                
-                if(traverse->right == 0)
+
+                if (traverse->right == 0)
                 {
-                    printf("traverse->right: %a\n",*traverse->right);
-                    //adding the process to the tree
+                    printf("traverse->right: %a\n", *traverse->right);
+                    // adding the process to the tree
                     traverse->right = &PCB_Table[proc];
                     return 1;
                 }
@@ -28,13 +29,13 @@ _Bool insertProc(short proc, struct PCB ** root, struct PCB PCB_Table[])
                     traverse = traverse->right;
                 }
             }
-            //traverse left side of the tree
+            // traverse left side of the tree
             else
             {
-                
-                if(traverse->left == 0)
+
+                if (traverse->left == 0)
                 {
-                    //adding the process to the tree
+                    // adding the process to the tree
                     traverse->left = &PCB_Table[proc];
                     return 1;
                 }
@@ -44,31 +45,33 @@ _Bool insertProc(short proc, struct PCB ** root, struct PCB PCB_Table[])
                 }
             }
         }
-
     }
-    else 
+    else
     {
         *root = &PCB_Table[proc];
         return 1;
     }
 }
 
-int removeHighestProc(struct PCB ** root)
+int
+removeHighestProc(struct PCB **root)
 {
+    printf("removing highest proc\n");
     int popped = 0;
-    if(*root == 0)
+    if (*root == 0)
     {
+        printf("*root == 0");
         return -1;
     }
-    struct PCB * traverse = *root;
-    //protection for under flow taken care of before the function call
-    if(traverse->right != 0)
+    struct PCB *traverse = *root;
+    // protection for under flow taken care of before the function call
+    if (traverse->right != 0)
     {
-        while(traverse->right->right != 0)
+        while (traverse->right->right != 0)
         {
             traverse = traverse->right;
         }
-        if(traverse->right->left != 0)
+        if (traverse->right->left != 0)
         {
             traverse->right = traverse->right->left;
         }
@@ -78,42 +81,50 @@ int removeHighestProc(struct PCB ** root)
             traverse->right->right = 0;
             traverse->right->left = 0;
             traverse->right = 0;
+            printf("Returning popped");
             return popped;
         }
     }
-    else if(*root != 0)
+    else if (*root != 0)
     {
-         //*root = *root->left; gave a compile error, i don't know why.
-         //if root is the only node, left should be zero so it sets it to zero
-         traverse = *root;
-         *root = traverse ->left;
-         traverse->left = 0;
-         traverse->right = 0;  
-         return traverse->id; 
+        //*root = *root->left; gave a compile error, i don't know why.
+        // if root is the only node, left should be zero so it sets it to
+        // zero
+        printf("*root %p", *root);
+        traverse = *root;
+        *root = traverse->left;
+        traverse->left = 0;
+        traverse->right = 0;
+        printf("Returning travers->id");
+        printf("*root: %p" ,*root);
+        return traverse->id;
     }
     else
     {
+        printf("Returning -1");
         return -1;
     }
-    //change status
-    //root->right.whatever status
+    // change status
+    // root->right.whatever status
+    printf("issues man");
 }
 
-int sizeOfQueue(struct PCB * root)
+int
+sizeOfQueue(struct PCB *root)
 {
     int count = 0;
-    if(root->left == 0 && root->right == 0)
+    if (root->left == 0 && root->right == 0)
     {
         count++;
         return count;
     }
     else
     {
-        if(root ->left != 0)
+        if (root->left != 0)
         {
             count += sizeOfQueue(root->left);
         }
-        if(root ->right != 0)
+        if (root->right != 0)
         {
             count += sizeOfQueue(root->right);
         }
@@ -122,18 +133,20 @@ int sizeOfQueue(struct PCB * root)
     }
 }
 
-void displayQueue(struct PCB * root, short * position)
+void
+displayQueue(struct PCB *root, short *position)
 {
-    if(root == 0)
+    if (root == 0)
     {
         printf("none in queue");
         return;
     }
-    if(root->right == 0)
+    if (root->right == 0)
     {
-        printf("Process %i, in Position %i of the queue with priority %i.\n", root->id, *position, root->priority);
+        printf("Process %i, in Position %i of the queue with priority %i.\n",
+               root->id, *position, root->priority);
         *position += 1;
-        if(root->left != 0)
+        if (root->left != 0)
         {
             displayQueue(root->left, position);
             return;
@@ -142,14 +155,14 @@ void displayQueue(struct PCB * root, short * position)
         {
             return;
         }
-        
     }
     else
     {
         displayQueue(root->right, position);
-        printf("Process %i, in Position %i of the queue with priority %i.\n", root->id, *position, root->priority);
+        printf("Process %i, in Position %i of the queue with priority %i.\n",
+               root->id, *position, root->priority);
         *position += 1;
-        if(root->left != 0)
+        if (root->left != 0)
         {
             displayQueue(root->left, position);
             return;
@@ -159,23 +172,24 @@ void displayQueue(struct PCB * root, short * position)
             return;
         }
     }
-
 }
 
-void treeState(struct PCB * root, int depth, int parent,char side)
+void
+treeState(struct PCB *root, int depth, int parent, char side)
 {
-    if(root == 0)
+    if (root == 0)
     {
         return;
     }
-   printf("node %i, depth %i, parent %i, side %c\n",root->id, depth, parent, side);
-   if(root->right != 0)
-   {
-       treeState(root->right,depth+1,root->id,'r');
-   }
-   if(root->left != 0)
-   {
-       treeState(root->left,depth+1,root->id,'l');
-   }
-   return;
+    printf("node %i, depth %i, parent %i, side %c\n", root->id, depth, parent,
+           side);
+    if (root->right != 0)
+    {
+        treeState(root->right, depth + 1, root->id, 'r');
+    }
+    if (root->left != 0)
+    {
+        treeState(root->left, depth + 1, root->id, 'l');
+    }
+    return;
 }
