@@ -1,154 +1,192 @@
-
+/*
+Jason Martin
+9/9/2017
+cs433 assignment 1
+This program creates a list of process control blocks and organizes them into a priorityQueue.
+it also has functionality for adding, removing processes from the queue, displaying the content and size of the queue.
+this program takes input from the commandline for which test to run
+*/
 
 #include "functions.h"
 #include <stdio.h>
+#include <stdlib.h>
 
-_Bool
-insertProc(short proc, struct PCB **root, struct PCB PCB_Table[])
+
+/*
+PURPOSE: inserts a Process into the priority Queue
+PARAMETERS: first a short int for the index of the process, a pointer to the pointer of the root of the queue, and the list of processes
+RETURN: returns true on a successful addition
+*/
+_Bool insertProc(short proc, struct PCB **root, struct PCB PCB_Table[])
 {
-    printf("adding %i proc, with priority %i\n", proc, PCB_Table[proc].priority);
-    if (*root != 0)
+    PCB_Table[proc].currentStatus = READY;
+    if (*root == 0)                         //case 1: tree is empty, insert as root
     {
-        struct PCB *traverse = *root;
-        // traverse the binary tree to place the process
-        while (traverse->right != 0)
+        *root = &PCB_Table[proc];
+        return 1;
+    }
+    else                                    //case 2: tree is not empty, traverse the tree until the point is found
+    {
+        struct PCB *traverse = *root;       //local traversal pointer so as to not affect the root while traversing
+        while (traverse != 0)
         {
 
-            if (traverse->priority <= PCB_Table[proc].priority)
+            if (traverse->priority <=
+                PCB_Table[proc].priority)   //case 2a: traversal to the right
             {
 
-                if (traverse->right == 0)
+                if (traverse->right == 0)   //case 2aa: right leaf is open insert into empty right leaf
                 {
-                    printf("traverse->right: %a\n", *traverse->right);
-                    // adding the process to the tree
                     traverse->right = &PCB_Table[proc];
                     return 1;
                 }
-                else
+                else                        //case 2ab: no empty right leaf continue on to the right
                 {
                     traverse = traverse->right;
                 }
             }
-            // traverse left side of the tree
+                                            //case 2b: traverse left
             else
             {
 
-                if (traverse->left == 0)
+                if (traverse->left == 0)    //case 2ba: left leaf is open, insert into empty leaf
                 {
-                    // adding the process to the tree
+
                     traverse->left = &PCB_Table[proc];
                     return 1;
                 }
-                else
+                else                        //case 2bb: left leaf is not open, continue traversal
                 {
                     traverse = traverse->left;
                 }
             }
         }
     }
-    else
-    {
-        *root = &PCB_Table[proc];
-        return 1;
-    }
+    return 0;
 }
-
-int
-removeHighestProc(struct PCB **root)
+/*
+PURPOSE:Removes the highest priority process from the queue
+PARAMETERS: takes a pointer to a pointer to the root of the tree, and a struct that contains the array of pcbs 
+RETURN: returns the id of the process removed
+*/
+int removeHighestProc(struct PCB **root, struct PCB PCB_Table[])
 {
-    printf("removing highest proc\n");
-    int popped = 0;
-    if (*root == 0)
+    int popped = 0;                         // return variable
+    if (*root == 0)                         // case 1 tree is empty
     {
-        printf("*root == 0");
         return -1;
     }
-    struct PCB *traverse = *root;
-    // protection for under flow taken care of before the function call
-    if (traverse->right != 0)
+
+    struct PCB *traverse = *root;           // traversal pointer to protect root while traversing
+    if (traverse->right != 0)               // case 2 root has a right branch/leaf
     {
-        while (traverse->right->right != 0)
+        while (traverse->right->right != 0) //checking two ahead for the purpose of reassigning any children of the popped.
         {
             traverse = traverse->right;
         }
-        if (traverse->right->left != 0)
+        popped = traverse->right->id;
+        if (traverse->right->left != 0)     //case 2a: process to be popped has a left leaf, reassign to the parent of the popped
         {
-            traverse->right = traverse->right->left;
+            struct PCB *newRight = traverse->right->left; 
+            
+            traverse->right->left = 0;
+            traverse->right = newRight;
         }
         else
         {
-            popped = traverse->right->id;
-            traverse->right->right = 0;
-            traverse->right->left = 0;
             traverse->right = 0;
-            printf("Returning popped");
-            return popped;
         }
+        PCB_Table[popped].currentStatus = RUNNING;
+        return popped;
     }
-    else if (*root != 0)
+    if (traverse->left != 0)                // case 3 root is non-null and has a left but no right, pop root
     {
-        //*root = *root->left; gave a compile error, i don't know why.
-        // if root is the only node, left should be zero so it sets it to
-        // zero
-        printf("*root %p", *root);
-        traverse = *root;
+        popped = traverse->id;
         *root = traverse->left;
         traverse->left = 0;
-        traverse->right = 0;
-        printf("Returning travers->id");
-        printf("*root: %p" ,*root);
-        return traverse->id;
+        PCB_Table[popped].currentStatus = RUNNING;        
+        return popped;
     }
-    else
-    {
-        printf("Returning -1");
-        return -1;
-    }
-    // change status
-    // root->right.whatever status
-    printf("issues man");
-}
 
-int
-sizeOfQueue(struct PCB *root)
+    popped = traverse->id;
+    *root = 0;                              // case 4 root is the only object in the trees, pop root
+    PCB_Table[popped].currentStatus = RUNNING;
+    return popped;
+}
+/*
+PURPOSE: counts the number of elements in the queue recoursively
+PARAMETERS: takes a pointer to the root of the tree
+RETURN: returns the number of elements
+*/
+int sizeOfQueue(struct PCB *root)
 {
     int count = 0;
-    if (root->left == 0 && root->right == 0)
+    if (root->left == 0 && root->right == 0)            //case 1: no leaves, add itself and return count
     {
         count++;
         return count;
     }
-    else
+    else                                                //case 2: at least one leaf, call recoursively
     {
         if (root->left != 0)
         {
-            count += sizeOfQueue(root->left);
+            count += sizeOfQueue(root->left);           //case 2a: left leaf present, call with left
         }
         if (root->right != 0)
         {
-            count += sizeOfQueue(root->right);
+            count += sizeOfQueue(root->right);          //case 2b: right leaf present, call with right
         }
-        count++;
-        return count;
+        count++;                                        //count itself
+        return count;                                   //return
     }
 }
 
-void
-displayQueue(struct PCB *root, short *position)
+/*
+PURPOSE:begins the display recoursion
+PARAMETERS: pointer to the tree based queue to be displayed
+RETURN: none
+*/
+void displayQueue(struct PCB *root)
 {
-    if (root == 0)
+    short *position = malloc(sizeof(short));
+    displayRecoursion(root,position);
+}
+/*
+PURPOSE: recoursively displays the content of the queue
+PARAMETERS: pointer to the root, pointer to a short for keeping track of position
+RETURN:none
+*/
+void displayRecoursion(struct PCB *root, short *position)
+{
+    if (root == 0)                                                                  //case 1: absolute root is empty, only displayed if first iteration root is 0
     {
-        printf("none in queue");
+        printf("none in queue\n");
         return;
     }
-    if (root->right == 0)
+    if (root->right == 0)                                                           //case 2: if root has no right leaf print root
     {
-        printf("Process %i, in Position %i of the queue with priority %i.\n",
+        printf("Process %-2i, in Position %-2i of the queue with priority %-2i.\n",
                root->id, *position, root->priority);
         *position += 1;
-        if (root->left != 0)
+        if (root->left != 0)                                                        //check for left
         {
-            displayQueue(root->left, position);
+            displayRecoursion(root->left, position);                                //display left leaf tree
+            return;
+        }
+        else                                                                        //no left, return
+        {
+            return;
+        }
+    }
+    else                                                                            //case 3: there is a right
+    {
+        displayRecoursion(root->right, position);                                   //call recoursively to display the right
+        printf("Process %-2i, in Position %-2i of the queue with priority %-2i.\n", //display itself
+               root->id, *position, root->priority);
+        *position += 1;
+        if (root->left != 0)                                                        //check for left leaves
+        {
+            displayRecoursion(root->left, position);                                //display left leaves
             return;
         }
         else
@@ -156,40 +194,5 @@ displayQueue(struct PCB *root, short *position)
             return;
         }
     }
-    else
-    {
-        displayQueue(root->right, position);
-        printf("Process %i, in Position %i of the queue with priority %i.\n",
-               root->id, *position, root->priority);
-        *position += 1;
-        if (root->left != 0)
-        {
-            displayQueue(root->left, position);
-            return;
-        }
-        else
-        {
-            return;
-        }
-    }
 }
 
-void
-treeState(struct PCB *root, int depth, int parent, char side)
-{
-    if (root == 0)
-    {
-        return;
-    }
-    printf("node %i, depth %i, parent %i, side %c\n", root->id, depth, parent,
-           side);
-    if (root->right != 0)
-    {
-        treeState(root->right, depth + 1, root->id, 'r');
-    }
-    if (root->left != 0)
-    {
-        treeState(root->left, depth + 1, root->id, 'l');
-    }
-    return;
-}
